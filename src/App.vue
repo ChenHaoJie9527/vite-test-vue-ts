@@ -1,91 +1,126 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue';
-
-const isCollapsed = ref(false);
-const sidebarWidth = computed(() => isCollapsed.value ? '80px' : '200px');
-
-const toggleSidebar = () => {
-  isCollapsed.value = !isCollapsed.value;
-};
-</script>
-
 <template>
-  <div class="app-container">
-    <el-container>
-      <el-aside class="sidebar" :width="sidebarWidth">
-        <el-button @click="toggleSidebar" class="toggle-btn">
-          {{ isCollapsed ? '>' : '<' }}
-        </el-button>
-        <div class="sidebar-content" :class="{ 'collapsed': isCollapsed }">
-          Sidebar Content
-        </div>
-      </el-aside>
-      <el-container class="main-container">
-        <el-header class="header">Fixed Header</el-header>
-        <el-main class="main-content">
-          <div class="scrollable-content">
-            <h2>Main Content</h2>
-            <p v-for="n in 50" :key="n">This is paragraph {{ n }}</p>
-          </div>
-        </el-main>
-        <el-footer>Footer</el-footer>
-      </el-container>
-    </el-container>
+  <div class="flex flex-col h-screen">
+    <!-- Sidebar -->
+    <div
+      class="fixed left-0 top-0 h-full bg-blue-200 overflow-y-auto transition-all duration-300 ease-in-out z-30"
+      :class="{ 'w-60': sidebarVisible, 'w-0': !sidebarVisible }"
+    >
+      <h2 class="text-xl font-bold p-4">Sidebar</h2>
+      <!-- Add sidebar content here -->
+    </div>
+
+    <!-- Overlay -->
+    <div
+      @click="dismissOverlay"
+      class="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out z-20"
+      :class="{
+        'opacity-100': showOverlay,
+        'opacity-0 pointer-events-none': !showOverlay,
+      }"
+    ></div>
+
+    <!-- Header -->
+    <header
+      class="fixed top-0 left-0 right-0 h-16 bg-green-200 z-10 transition-all duration-300 ease-in-out"
+      :class="{ 'ml-60': sidebarVisible }"
+    >
+      <div class="flex items-center h-full px-4">
+        <button @click="toggleSidebar" class="mr-4">
+          <span class="text-2xl">☰</span>
+        </button>
+        <h1 class="text-2xl font-bold">Header</h1>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main
+      class="flex-grow pt-16 bg-yellow-100 overflow-y-auto transition-all duration-300 ease-in-out"
+      :class="{ 'ml-60': sidebarVisible }"
+    >
+      <div class="p-4">
+        <h2 class="text-xl font-bold mb-4">Main Content</h2>
+        <p>This is the main content area. It will scroll independently.</p>
+        <!-- Add more content here to demonstrate scrolling -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer
+      class="bg-red-200 transition-all duration-300 ease-in-out"
+      :class="{ 'ml-60': sidebarVisible }"
+    >
+      <div class="p-4">
+        <p>Footer content</p>
+      </div>
+    </footer>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.app-container {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+<script lang="ts">
+import { defineComponent, ref, onMounted, onUnmounted, watch } from "vue";
 
-  .el-container {
-    height: 100%;
-  }
+export default defineComponent({
+  name: "ResponsiveLayout",
+  setup() {
+    const sidebarVisible = ref(false);
+    const showOverlay = ref(false);
+    const isInOverlayRange = ref(false);
 
-  .sidebar {
-    background: blueviolet;
-    transition: width 0.3s;
-    overflow: hidden;
-
-    .toggle-btn {
-      
-    }
-
-    .sidebar-content {
-      width: 200px;
-      transition: width 0.3s;
-      padding: 20px;
-      color: white;
-
-      &.collapsed {
-        width: 80px;
-        padding: 20px 0;
-        text-align: center;
+    const toggleSidebar = () => {
+      sidebarVisible.value = !sidebarVisible.value;
+      if (isInOverlayRange.value) {
+        showOverlay.value = sidebarVisible.value;
       }
-    }
-  }
+    };
 
-  .main-container {
-    flex-direction: column;
-    overflow: hidden;
-  }
+    const dismissOverlay = () => {
+      showOverlay.value = false;
+      if (isInOverlayRange.value) {
+        sidebarVisible.value = false;
+      }
+    };
 
-  .header {
-    background-color: palevioletred;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-  }
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      isInOverlayRange.value = width >= 768 && width < 1024;
 
-  .main-content {
-    overflow-y: auto;
-    flex: 1;
-  }
+      if (width >= 1024) {
+        sidebarVisible.value = true;
+        showOverlay.value = false;
+      } else if (width < 768) {
+        sidebarVisible.value = false;
+        showOverlay.value = false;
+      } else {
+        sidebarVisible.value = true;
+        showOverlay.value = true;
+      }
+    };
 
-  .scrollable-content {
-    padding: 20px;
-  }
-}
+    onMounted(() => {
+      checkScreenSize();
+      window.addEventListener("resize", checkScreenSize);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener("resize", checkScreenSize);
+    });
+
+    watch(isInOverlayRange, (newValue) => {
+      if (!newValue) {
+        showOverlay.value = false;
+      }
+    });
+
+    return {
+      sidebarVisible,
+      showOverlay,
+      toggleSidebar,
+      dismissOverlay,
+    };
+  },
+});
+</script>
+
+<style scoped>
+/* Additional styles can be added here if needed */
 </style>
