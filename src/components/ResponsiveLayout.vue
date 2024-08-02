@@ -102,9 +102,11 @@ export default defineComponent({
     const isInOverlayRange = ref(false);
 
     const toggleSidebar = () => {
-      if (window.innerWidth < 768) {
+      const innerWidth = window.innerWidth
+      console.log('innerWidth =>', innerWidth);
+      if (innerWidth < 768) {
         sidebarVisible.value = !sidebarVisible.value;
-        showOverlay.value = sidebarVisible.value && isInOverlayRange.value;
+        showOverlay.value = true;
         emit("update:sidebarVisible", sidebarVisible.value);
       } else {
         sidebarExpanded.value = !sidebarExpanded.value;
@@ -123,7 +125,6 @@ export default defineComponent({
     const checkScreenSize = () => {
       const width = window.innerWidth;
       isInOverlayRange.value = width >= 768 && width < 1024;
-
       if (width >= 1024) {
         sidebarVisible.value = true;
         sidebarExpanded.value = true;
